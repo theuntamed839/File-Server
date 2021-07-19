@@ -9,6 +9,8 @@ import java.util.Scanner;
 public class Main {
 
     public static void main(String[] args) throws IOException {
-        new ServerMachine();
+        var fileManager = new FileManager();
+        new ServerMachine(fileManager);
+        fileManager.close();
     }
 }

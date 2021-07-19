@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Objects;
 
 public class ServerMachine {
     private final FileManager fileManager;
@@ -16,8 +17,8 @@ public class ServerMachine {
     private final String ADDRESS = "127.0.0.1";
     private final int PORT = 23456;
 
-    public ServerMachine() throws IOException {
-        fileManager = new FileManager();
+    public ServerMachine(FileManager fileManager) throws IOException {
+        this.fileManager = fileManager;
         serSocket = new ServerSocket(PORT, 50, InetAddress.getByName(ADDRESS));
         System.out.println("Server started!");
         socket = serSocket.accept();
@@ -49,17 +50,33 @@ public class ServerMachine {
         }
         String requestType = getRequestType(request);
         String fileName = getFileName(request);
-        switch (requestType) {
+        switch (Objects.requireNonNull(requestType)) {
             case "PUT":
-                String fileContent = getFileContent(request);
-                int status = !fileManager.fileExists(fileName)
-                        ? fileManager.addFile(fileName, fileContent) ? 200 : 403 : 403;
-                send(status + "");
+                int length = inputStr.readInt();
+                byte[] arr = new byte[length];
+                inputStr.readFully(arr, 0,length);
+                if (fileName.isEmpty()) {
+                    send(fileManager.addFileAutoName(arr)+"");
+                }else {
+                    if (!fileManager.fileExists(fileName)) {
+                        var value = fileManager.addFile(fileName, arr);
+                        if (value < 0) {
+                            send("FAILED");
+                        }
+                        send(value + "");
+                    }
+                }
                 break;
             case "GET":
                 var response = fileManager.getFileContent(fileName);
-                String result = response.map(s -> 200 + " " + s).orElse(404 + "");
-                send(result);
+                if (response.isPresent()) {
+                    send("200");
+                    var file = response.get();
+                    outputStr.writeInt(file.length);
+                    outputStr.write(file, 0, file.length);
+                }else {
+                    send("404");
+                }
                 break;
             case "DELETE":
                 String result2 = fileManager.deleteFile(fileName) ? 200 + "" : 404 +"";

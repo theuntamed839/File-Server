@@ -20,15 +20,26 @@ public class ClientMachine {
         outputStr = new DataOutputStream(socket.getOutputStream());
     }
 
-    public void send(String str) throws IOException {
+    public void sendString(String str) throws IOException {
         outputStr.writeUTF(str);
-//        System.out.println("Sent: " + str);
     }
 
-    public String read() throws IOException {
+    public void sendByte(byte[] arr) throws IOException {
+        outputStr.writeInt(arr.length);
+        outputStr.write(arr);
+    }
+
+    public String readString() throws IOException {
         return inputStr.readUTF();
-//        var str = inputStr.readUTF();
-//        System.out.println("Received: " + str);
+    }
+
+    public byte[] readBytes(byte[] arr) throws IOException {
+        inputStr.readFully(arr, 0, arr.length);
+        return arr;
+    }
+
+    public int readInt() throws IOException {
+        return inputStr.readInt();
     }
 
     public void close() throws IOException {
